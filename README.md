@@ -1,7 +1,7 @@
 # Pizza-Sales-Analysis-SQL-Project
 This repository contains a comprehensive SQL-based analysis of pizza sales data designed to demonstrate practical data analysis and problem-solving skills using SQL Server (SSMS).
 
-📌 Project Objective
+# Project Objective
 
 
 # The objective of this project is to analyze pizza sales data using SQL to:
@@ -10,7 +10,7 @@ Identify top-selling pizzas and categories
 Analyze customer ordering patterns
 Generate actionable business insights to improve revenue and operations
 
-🗂 Dataset Description
+# Dataset Description
 
 
 # The dataset consists of four tables:
@@ -27,7 +27,7 @@ Generate actionable business insights to improve revenue and operations
 -> Revenue and order analysis
 -> Category-wise and time-based insights
 
-🛠 Skills Demonstrated:
+# Skills Demonstrated:
 
 
 -> SQL Server (SSMS)
