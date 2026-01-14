@@ -1,1 +1,147 @@
+--create database Pizza_Sales
+
+--use Pizza_Sales
+
+select * from order_details
+select * from orders
+select * from pizza_types
+select * from pizzas
+
+--Data Validation Queries
+select count(*) from orders
+select count(*) from order_details
+select count(*) from pizzas
+select count(*) from pizza_types
+
+--Check Nulls:
+select * from orders where order_id is null
+select * from order_details where order_id is null
+select * from pizza_types where ingredients is null
+
+--(1) Retrieve the total number of orders placed.
+select count(distinct(order_id)) as total_orders from orders
+
+--(2) Calculate the total revenue generated from pizza sales.
+select sum(cast(p.price as decimal(10,2))* od.quantity) from pizzas as p
+inner join order_details as od
+on p.pizza_id = od.pizza_id
+
+--(3) Identify the highest-priced pizza.
+
+select top 1 pt.name, max(p.price) as max_price from pizzas as p
+inner join pizza_types as pt
+on p.pizza_type_id=pt.pizza_type_id
+group by pt.name
+order by max_price desc
+
+--(4) Identify the most common pizza size ordered.
+select top 1 size, count(size) from pizzas
+group by size
+order by count(size) desc
+
+--(5) List the top 5 most ordered pizza types along with their quantities.
+
+select top 5 pt.name, sum(cast(od.quantity as int)) as total_ordered from pizza_types as pt
+inner join pizzas as p
+on pt.pizza_type_id = p.pizza_type_id
+inner join order_details as od
+on od.pizza_id = p.pizza_id
+group by pt.name
+order by total_ordered desc
+
+--(6) Join the necessary tables to find the total quantity of each pizza category ordered.
+select pt.category, sum(cast(od.quantity as int)) as total_quantity from pizza_types as pt
+inner join pizzas as p
+on pt.pizza_type_id = p.pizza_type_id
+inner join order_details as od
+on od.pizza_id = p.pizza_id
+group by pt.category
+order by total_quantity desc
+
+--(7) Determine the distribution of orders by hour of the day.
+select datepart(hour,time) as hours,  count(order_id) as hourly_orders from   orders
+group by datepart(hour,time)
+order by  hours
+
+-- (8) What is the average number of pizzas per order?
+select * from order_details
+select * from orders
+
+
+select sum(cast(od.quantity as int))/count(distinct(o.order_id)) from order_details as od inner join orders as o
+on od.order_id = o.order_id
+
+-- (9) Which day of the week generates the highest revenue? 
+select datepart(WEEKDAY,o.date) as DayOWeek, sum(cast(od.quantity as decimal(10,2))*p.price) as revenue from orders as o
+inner join order_details as od on o.order_id = od.order_id
+inner join pizzas as p on p.pizza_id = od.pizza_id
+group by datepart(WEEKDAY,o.date)
+order by revenue desc
+
+-- (10) What percentage of orders include more than one pizza?
+
+
+select count(case when t.total_pizzas > 1 then order_id end)*100/count(distinct(t.order_id))
+ as percentage_multi_pizza_orders from
+
+(select o.order_id,sum(cast(od.quantity as int)) as total_pizzas from order_details as od
+inner join orders as o 
+on o.order_id=od.order_id
+group by o.order_id
+) as t
+
+-- (11) Which pizzas have high revenue but low quantity sold?
+select pt.name, sum(cast(od.quantity as int)) pizza_counts, sum(cast(od.quantity as decimal(10,2))*p.price) 
+as revenue from order_details  as od inner join pizzas as p
+on p.pizza_id = od.pizza_id
+inner join pizza_types as pt
+on pt.pizza_type_id = p.pizza_type_id
+group by pt.name
+having sum(cast(od.quantity as int)) < 1000
+order by revenue desc
+
+-- (12) Which pizza category has the highest average price?
+
+select top 1 pt.category, avg(cast(p.price as decimal(10,2))) avg_price from pizza_types as pt inner join pizzas as p
+on pt.pizza_type_id = p.pizza_type_id
+group by pt.category
+order by avg_price desc
+
+-- (13) Which pizza categories perform best during peak hours (6pm to 9pm)?
+
+select top 1 pt.category, sum(cast(od.quantity as int)) as orders_count, 
+round(sum(cast(od.quantity as decimal(10,2)))*100/sum(sum(cast(od.quantity as decimal(10,2)))) over (),5) 
+as percent_orders_count from pizzas as p 
+inner join order_details as od
+on p.pizza_id = od.pizza_id
+
+inner join orders as o
+on o.order_id = od.order_id
+
+inner join pizza_types as pt
+on pt.pizza_type_id = p.pizza_type_id
+
+where DATEPART(HOUR, o.time) between 18 and 21
+group by pt.category
+order by orders_count desc
+
+-- (14) Identify the top 3 pizza types that generated the highest total revenue across all categories.
+select top 3 pt.category, pt.name, sum(cast(od.quantity as int)* cast(p.price as decimal(10,2))) revenue from pizza_types as pt inner join pizzas as p
+on pt.pizza_type_id = p.pizza_type_id
+inner join order_details as od
+on od.pizza_id = p.pizza_id
+group by pt.category, pt.name
+order by revenue desc
+
+-- (15) Determine the top 3 most ordered pizza types based on revenue for each pizza category.
+
+select category, name, revenue, Rnk from (select category, name, revenue, rank() over(partition by category order by revenue desc)as Rnk 
+from (select pt.category, pt.name, sum(cast(od.quantity as int)* cast(p.price as decimal(10,2))) revenue 
+
+	from pizza_types as pt inner join pizzas as p
+	on pt.pizza_type_id = p.pizza_type_id
+	inner join order_details as od
+	on od.pizza_id = p.pizza_id
+	group by pt.category, pt.name) as t1) as t2
+where Rnk <=3
 
